@@ -1,160 +1,21 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Azan & Prayer Times</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
-            color: white;
-        }
-        header {
-            text-align: center;
-            padding: 20px;
-            background: #203a43;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-        }
-        header h1 {
-            margin: 0;
-            font-size: 2.5em;
-        }
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #2c5364;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-        }
-        .time-display {
-            text-align: center;
-            margin: 20px 0;
-        }
-        .time-display h2 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
-        }
-        .prayer-times {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid #1a2e35;
-        }
-        .prayer-times:last-child {
-            border-bottom: none;
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 10px;
-            background: #1a2e35;
-            color: white;
-            text-align: center;
-            text-decoration: none;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-        .btn:hover {
-            background: #203a43;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Islamic Prayer Times</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <h1>Azan & Prayer Times</h1>
-    </header>
-    <div class="container">
-        <div class="time-display">
-            <h2>Current Location: <span id="location">Fetching...</span></h2>
-            <h2>Next Azan: <span id="next-azan">Fetching...</span></h2>
-        </div>
-        <div class="prayer-time-list" id="prayer-time-list">
-            <!-- নামাজের সময়সূচি এখানে দেখানো হবে -->
-        </div>
-        <a href="#" class="btn" onclick="refreshData()">Refresh Times</a>
+  <div class="container">
+    <h1>Islamic Prayer Times</h1>
+    <div id="prayer-times">
+      <!-- Prayer times will be displayed here -->
     </div>
-    <script>
-        const API_URL = "https://api.aladhan.com/v1/timings";
-        const azanAudio = new Audio("https://example.com/azan.mp3"); // Replace with actual Azan audio URL
-
-        async function getLocationAndPrayerTimes() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    document.getElementById("location").textContent = `Lat: ${lat}, Lon: ${lng}`;
-                    
-                    const response = await fetch(`${API_URL}?latitude=${lat}&longitude=${lng}&method=2`);
-                    const data = await response.json();
-                    updatePrayerTimes(data.data.timings);
-                    checkAzanTime(data.data.timings);
-                }, (error) => {
-                    alert("Error fetching location!");
-                });
-            } else {
-                alert("Geolocation is not supported by this browser.");
-            }
-        }
-
-        function updatePrayerTimes(timings) {
-            const prayerTimesContainer = document.getElementById("prayer-time-list");
-            prayerTimesContainer.innerHTML = "";
-
-            for (const [prayer, time] of Object.entries(timings)) {
-                const prayerRow = document.createElement("div");
-                prayerRow.className = "prayer-times";
-                prayerRow.innerHTML = `<div>${prayer}</div><div>${time}</div>`;
-                prayerTimesContainer.appendChild(prayerRow);
-            }
-        }
-
-        function checkAzanTime(timings) {
-            const currentTime = new Date();
-            const azanTimes = Object.values(timings);
-
-            for (const azanTime of azanTimes) {
-                const azanDate = new Date(`1970-01-01T${azanTime}:00`);
-                if (isAzanTime(currentTime, azanDate)) {
-                    playAzanNotification();
-                    break;
-                }
-            }
-        }
-
-        function isAzanTime(currentTime, azanDate) {
-            return currentTime.getHours() === azanDate.getHours() && currentTime.getMinutes() === azanDate.getMinutes();
-        }
-
-        function playAzanNotification() {
-            // Display a notification in browser
-            if (Notification.permission === "granted") {
-                new Notification("Azan Time", {
-                    body: "It's time for Azan! Please perform your prayer.",
-                    icon: "https://example.com/azan-icon.png", // Replace with actual icon URL
-                });
-
-                // Play Azan audio
-                azanAudio.play();
-            } else if (Notification.permission !== "denied") {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        playAzanNotification();
-                    }
-                });
-            }
-        }
-
-        function refreshData() {
-            getLocationAndPrayerTimes();
-        }
-
-        // Load prayer times on page load
-        window.onload = getLocationAndPrayerTimes;
-    </script>
+    <div id="message">
+      <!-- Messages will be displayed here -->
+    </div>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
