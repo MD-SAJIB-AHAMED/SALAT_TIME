@@ -1,6 +1,6 @@
-// Function to fetch prayer times based on user's location
-async function getPrayerTimes(latitude, longitude) {
-  const response = await fetch(`https://api.aladhan.com/v1/timings/${new Date().getDate()}-${new Date().getMonth() + 1}-${new Date().getFullYear()}?latitude=${latitude}&longitude=${longitude}&method=2`);
+// Function to fetch prayer times based on city and country
+async function getPrayerTimes(city, country) {
+  const response = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${city}&country=${country}&method=2`);
   const data = await response.json();
   return data.data.timings;
 }
@@ -81,26 +81,43 @@ function playAdhan() {
   adhan.play();
 }
 
-// Main function
-async function main() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-      const timings = await getPrayerTimes(latitude, longitude);
-      displayPrayerTimes(timings);
-      checkPrayerTime(timings);
-      displayCountdown(timings);
+// Main function to initialize the app
+async function main(city = "London", country = "UK") {
+  const timings = await getPrayerTimes(city, country);
+  displayPrayerTimes(timings);
+  checkPrayerTime(timings);
+  displayCountdown(timings);
 
-      // Update countdown every minute
-      setInterval(() => {
-        displayCountdown(timings);
-      }, 60000);
-    });
-  } else {
-    alert("Geolocation is not supported by your browser. Please enter your city manually.");
-  }
+  // Update countdown every minute
+  setInterval(() => {
+    displayCountdown(timings);
+  }, 60000);
 }
 
-// Run the main function
-main();
+// Geolocation fallback
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(async (position) => {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+    const data = await response.json();
+    main(data.city, data.countryName);
+  }, () => {
+    // If user denies location access, use default location
+    main();
+  });
+} else {
+  // If geolocation is not supported, use default location
+  main();
+}
+
+// Update location manually
+document.getElementById('update-location').addEventListener('click', () => {
+  const city = document.getElementById('city').value;
+  const country = document.getElementById('country').value;
+  if (city && country) {
+    main(city, country);
+  } else {
+    alert("Please enter both city and country.");
+  }
+});
