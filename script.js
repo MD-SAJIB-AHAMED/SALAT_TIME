@@ -1,8 +1,15 @@
-// Function to fetch prayer times based on city and country
-async function getPrayerTimes(city, country) {
-  const response = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${city}&country=${country}&method=2`);
+// Function to fetch prayer times based on latitude and longitude
+async function getPrayerTimes(latitude, longitude) {
+  const response = await fetch(`https://api.aladhan.com/v1/timings/${new Date().getDate()}-${new Date().getMonth() + 1}-${new Date().getFullYear()}?latitude=${latitude}&longitude=${longitude}&method=2`);
   const data = await response.json();
-  return data.data.timings;
+  return data.data;
+}
+
+// Function to fetch location name based on latitude and longitude
+async function getLocationName(latitude, longitude) {
+  const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+  const data = await response.json();
+  return `${data.city}, ${data.countryName}`;
 }
 
 // Function to format time in 12-hour format
@@ -82,42 +89,33 @@ function playAdhan() {
 }
 
 // Main function to initialize the app
-async function main(city = "London", country = "UK") {
-  const timings = await getPrayerTimes(city, country);
-  displayPrayerTimes(timings);
-  checkPrayerTime(timings);
-  displayCountdown(timings);
+async function main() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
 
-  // Update countdown every minute
-  setInterval(() => {
-    displayCountdown(timings);
-  }, 60000);
-}
+      // Fetch location name
+      const locationName = await getLocationName(latitude, longitude);
+      document.getElementById('location').textContent = `Location: ${locationName}`;
 
-// Geolocation fallback
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(async (position) => {
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
-    const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
-    const data = await response.json();
-    main(data.city, data.countryName);
-  }, () => {
-    // If user denies location access, use default location
-    main();
-  });
-} else {
-  // If geolocation is not supported, use default location
-  main();
-}
+      // Fetch prayer times
+      const prayerData = await getPrayerTimes(latitude, longitude);
+      displayPrayerTimes(prayerData.timings);
+      checkPrayerTime(prayerData.timings);
+      displayCountdown(prayerData.timings);
 
-// Update location manually
-document.getElementById('update-location').addEventListener('click', () => {
-  const city = document.getElementById('city').value;
-  const country = document.getElementById('country').value;
-  if (city && country) {
-    main(city, country);
+      // Update countdown every minute
+      setInterval(() => {
+        displayCountdown(prayerData.timings);
+      }, 60000);
+    }, () => {
+      alert("Unable to fetch your location. Please allow location access.");
+    });
   } else {
-    alert("Please enter both city and country.");
+    alert("Geolocation is not supported by your browser.");
   }
-});
+}
+
+// Run the main function
+main();
